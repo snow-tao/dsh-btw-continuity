@@ -1,227 +1,102 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/branding/dsh-btw-banner.png" alt="DSH BTW" width="100%">
-</p>
+# DSH BTW Continuity
 
-<div align="center">
+Continuous side questions in DeepSeek Harness: one chronological panel per session, inline follow-ups, and no interruption to the main task.
 
-# DSH BTW
+[简体中文](README.zh-CN.md) · English · [日本語](README.ja.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
 
-**Ask a side question in DeepSeek Harness. Answers only, no tool execution.**
-
-[简体中文](README.zh-CN.md) · [English](README.en.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
-
-[Changelog](CHANGELOG.md) · [Apache-2.0](LICENSE)
-
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![DSH Web Plugin](https://img.shields.io/badge/DSH%20Web-Plugin-0f766e.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
-
-</div>
-
-> **BTW Continuity is an independent modification of [MichengAI DSH BTW 1.3.10](https://github.com/MichengAI/dsh-btw)**, licensed under Apache-2.0 and endorsed by neither DeepSeek AI nor MichengAI. Do not install it alongside the original plugin because both register `/btw`. See `NOTICE.md` for attribution and modifications.
-
-> DSH BTW is a community-maintained DeepSeek Harness plugin, not an official DeepSeek AI product. Type `/btw your question` in the current conversation to get a context-aware answer in an independent bubble without interrupting the main task. Supports DSH Web and desktop apps that include DSH Web. From `1.0.0`, hosts outside the supported list are rejected by the version gate and the plugin will not run; installed configuration and main-conversation records are kept.
+> **BTW Continuity is an independent modification of [MichengAI DSH BTW 1.3.10](https://github.com/MichengAI/dsh-btw)**, licensed under Apache-2.0 and endorsed by neither DeepSeek AI nor MichengAI. See [NOTICE.md](NOTICE.md) for attribution and modifications.
 
 ## Features
 
-- **Context-aware questions**: explain concepts, recap conclusions, or ask a quick question about the current conversation.
-- **Answers only**: no reading new files, browsing the web, running commands, or editing code.
-- **Single-panel continuous history**: every turn in a session appears in one chronological panel with Markdown, formulas, copy, collapse, hide, and history restoration.
-- **Keep the main task going**: side questions are answered separately and by default do not add answers to the main conversation.
-- **Return on request**: when you want the conclusion available to the main conversation, ask for it in the question ("send the answer back to the main conversation") and the side ask uses `send_message` to deliver a self-contained answer to the main session. It does not send anything when you did not ask.
-- **Cancel anytime**: close a bubble while it is answering to cancel that question.
-- **Full i18n & Themes**: follow DSH light and dark themes with complete native support for all 8 official DeepSeek Harness languages (English, Chinese, Japanese, Spanish, French, German, Russian, Portuguese) from host 0.2.2-rc.1 onwards; earlier 0.2.0–0.2.1 hosts safely fall back to Chinese and English.
+- **Continuous conversation per session**: every BTW turn appears in one chronological panel.
+- **Inline follow-ups**: ask from the expanded panel's bottom composer. Enter sends; Shift+Enter inserts a newline.
+- **Adaptive composer**: starts at one line, grows up to four lines, then scrolls internally and returns to one line after sending.
+- **Hide and restore**: X only hides the panel; the next question restores its visible history.
+- **Explicit reset**: the trash icon clears the current session's BTW history and starts over.
+- **Main-task isolation**: answers stay out of the main conversation by default. `send_message` is used only when explicitly requested.
+- **Read-only answers**: no new file reads, web access, commands, or edits by default; optional tool allowlisting remains restricted.
+- **Selection questions and i18n**: ask about selected text, render Markdown and formulas, copy answers, and use eight interface languages.
 
-## Screenshots
+## Current interface
 
-### Side questions in stock DSH
-
-The main conversation stays in place, with the side answer above the composer.
-
-![A BTW answer bubble in the stock DSH conversation](https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/screenshots/btw-conversation.png)
-
-### Command menu
-
-Type `/` and select `btw` under Commands, or enter `/btw your question` directly.
-
-![The official command menu with btw](https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/screenshots/btw-command-menu.png)
-
-### Independent answer bubbles
-
-Each answer has its own copy, collapse or expand, and close controls in the upper right.
-
-![Multiple answer bubbles with copy, collapse, and close controls](https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/screenshots/btw-bubbles.png)
-
-### Side-question settings
-
-Open **Plugins**, pick `dsh-btw-continuity`, and the settings form sits directly on the detail page — the whitelist and the prompt box, pre-filled with the built-in prompt so you can edit it in place.
-
-![The side-question settings form on the plugin detail page](assets/screenshots/btw-settings-panel.png)
-
-### Drawing from a side question
-
-With `pele_draw` on the whitelist, a side question can render a diagram. It shows up inside the side-question panel, and the main conversation is untouched.
-
-![A side question rendering a flowchart with pele_draw](assets/screenshots/btw-pele-draw.png)
-
-## DSH product ecosystem
-
-For a desktop workbench, download [DSH Codex Desktop](https://github.com/MichengAI/dsh-codex-desktop/releases). Existing [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) installations can add plugins as needed by following each project's README. Below are 11 first-party plugins; consult the corresponding desktop release notes and bundled catalog for what that version includes.
-
-| Plugin | What you can do |
-| --- | --- |
-| [Codex UI](https://github.com/MichengAI/dsh-codex-ui) | Organize projects and conversations, search tasks, and navigate chat turns |
-| [Agency Agents](https://github.com/MichengAI/dsh-agency-agents) | Choose and summon specialists for your task |
-| [Skills Manager](https://github.com/MichengAI/dsh-skills-manager) | Find, enable, create, and import local skills |
-| [Archive Manager](https://github.com/MichengAI/dsh-archive-manager) | Search, restore, or clean up archived conversations |
-| [IM Connect](https://github.com/MichengAI/dsh-im-connect) | Send tasks and receive replies through messaging platforms |
-| [Automation](https://github.com/MichengAI/dsh-automation) | Schedule tasks and review each run |
-| [BTW](https://github.com/MichengAI/dsh-btw) | Ask side questions without interrupting the main task |
-| [Simplify](https://github.com/MichengAI/dsh-simplify) | Use `/simplify` to improve code within your Git changes |
-| [PUA](https://github.com/MichengAI/dsh-pua) | Guide the Agent to try new approaches after failures, investigate causes, and verify results before completion |
-| [Code Review](https://github.com/MichengAI/dsh-code-review) | Use `/review` to request an independent Agent code review and receive the report in the current conversation |
-| [Codex Pet](https://github.com/MichengAI/dsh-codex-pet) | View conversation notifications and respond to tool approvals and questions through a desktop pet |
+![BTW Continuity single-panel conversation with history and an inline follow-up composer](assets/screenshots/btw-continuity-panel.webp)
 
 ## Prerequisites
 
-- An installed copy of DeepSeek Harness.
-- Host compatibility: Full DeepSeek Harness `0.2.x` line (`>=0.2.0-rc.1 <0.3.0-0`), verified with `0.2.0-rc.1`, `0.2.0-rc.2`, `0.2.1-rc.1`–`0.2.1-rc.5`, `0.2.2-rc.1`, and `0.2.2-rc.2`, and forwards-compatible with subsequent `0.2.x` RC releases without requiring routine plugin version bumps.
-- Language support: all 8 built-in languages are natively selectable from DeepSeek Harness `0.2.2-rc.1` onwards; on `0.2.0`–`0.2.1` hosts, extra registered locale dictionaries stay dormant and the UI safely falls back to English and Chinese.
-- Legacy hosts prior to `0.2.0-rc.1` are no longer supported. The version gate cleanly intercepts breaking changes in the `0.3.0` generation. Users on `0.1.x` hosts should install `0.1.24`.
-- Node.js 22+ and `dsh` available in your terminal.
+- DeepSeek Harness `>=0.2.0-rc.1 <0.3.0-0`
+- Node.js 22+
+- A configured model provider
+
+**Do not install or enable this package alongside `@michengai/dsh-btw`**, because both register `/btw`.
 
 ## Installation
 
-Examples use the `web` profile; replace it with your target profile. Disable other plugins that provide `/btw` before installing.
+Replace `desktop` with your actual profile:
 
-### Ask an agent to install it (recommended)
-
-Send the prompt below to any agent that can run terminal commands on your computer. Replace `web` with your actual profile. Once installed, use the plugin in DSH.
-
-```text
-Install the DSH plugin dsh-btw-continuity into my local web profile by running: dsh plugin --profile web add dsh-btw-continuity@latest --registry=https://registry.npmjs.org/. Then run dsh --profile web --dump-config, confirm the configuration includes dsh-btw-continuity, and explain how to reload DSH and start using the plugin.
+```bash
+dsh plugin --profile desktop add dsh-btw-continuity@latest --registry=https://registry.npmjs.org/
 ```
 
-### Install manually from npm
-
-```powershell
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-dsh plugin --profile web add dsh-btw-continuity@latest --registry=https://registry.npmjs.org/
-```
-
-### Reloading
-
-Install or update after current tasks finish, as desktop apps may reload automatically. If the change has not taken effect, use the desktop app's reload action or restart the `dsh web` service. Refreshing the browser alone is not enough.
-
-Installing `@latest` on a host before `0.2.0`, or on a `0.2.1` alpha, is rejected by the version gate, and the plugin will not run. On `0.1.x`, install `0.1.24` instead. Rejection does not delete existing configuration or main-conversation records.
+If it does not activate automatically, reload the desktop app or restart the corresponding DSH service. Refreshing the browser alone may not reload new Host code.
 
 ## Usage
 
-### Ask about selected text
-
-Select text within a single conversation message, choose **Ask BTW** from the compact selection toolbar, and enter a question or choose **Explain this**. Enter sends, Shift+Enter inserts a newline, and Esc cancels. Answers use the existing BTW bubbles with an expandable quote.
-
-- Supports prose, lists, and code text; quotes are limited to 8,000 UTF-16 code units including whitespace and are never silently truncated.
-- The quote is frozen when the menu opens. Other context comes from completed main-chat content at send time.
-- Main-composer drafts are preserved. Cross-message selections, editable fields, and tool output do not show the menu.
-- **Add to conversation** appends a quote to the existing draft without sending. After insertion, focus returns to the composer; insertion is blocked while a message is being submitted. Right-click keeps the browser's native menu.
-- Keyboard selection is supported inside focused message elements: release Shift to focus the toolbar. Browsers without the Popover API use a fixed-position fallback, which may be clipped by the host layout.
-- Coexists with `dsh-better-sidebar`: BTW handles conversation text only; file previews and editors retain the sidebar plugin's own **Add to conversation** action without a duplicate toolbar.
-- This entry uses host DOM markers. Unrecognized layouts keep their normal context menu; `/btw` remains available.
-
-### Command entry
-
-In a conversation with existing context, enter:
+### Start or append a side question
 
 ```text
-/btw Summarize the proposed plan in one sentence.
+/btw Summarize the current proposal in one sentence
 ```
 
-| Goal | Action |
+You can also select `btw` from the `/` menu or use **Ask BTW** on selected message text.
+
+### Follow up inside the panel
+
+Expand the BTW panel and use its dedicated bottom composer:
+
+- **Enter**: send;
+- **Shift+Enter**: insert a newline;
+- the composer starts at one line and grows up to four lines;
+- inline follow-ups and `/btw` share the same session history.
+
+### Hide, restore, and clear
+
+| Action | Behavior |
 | --- | --- |
-| Ask a side question | Submit `/btw your question`, or choose `btw` from the `/` menu. |
-| Read the answer | Wait for the answer in the independent bubble above the composer. |
-| Copy an answer | Click the copy icon in the bubble's upper right. |
-| Collapse or expand | Click the collapse or expand icon. |
-| Cancel a question | Close its bubble while it is running. The main task is unaffected. |
-| Dismiss an answer | Close the completed bubble. |
-| Ask again | Use the expanded panel's bottom composer (Enter to send, Shift+Enter for a newline), or submit another `/btw` question. Both share this session's BTW history. |
-| Clear BTW history | Click the trash icon in the panel header to clear this session's BTW history and start over. |
+| X | Hides the entire panel without clearing history; the next question restores it. |
+| Trash icon | Clears all BTW history for this session and removes the panel; the next question starts fresh. |
+| Copy | Copies the corresponding answer's original Markdown. |
 
-Use the regular conversation to run commands, edit code, or continue the main task. BTW can only answer using existing context.
+### History and privacy
 
-BTW accepts text only. Side questions with images or files are rejected without clearing the draft or attachments; remove the attachments before retrying.
-
-### Usage Notes
-
-- BTW is one continuous side conversation per session. Follow-ups inherit earlier completed BTW turns and the completed main-session context at ask time; they do not include an answer still being generated.
-- Closing the panel with X only hides it and restores it on the next question. The trash icon clears the entire BTW conversation; neither action changes the main-session log.
-- Continuous mode includes earlier BTW turns in later model requests and may increase token usage. Requests still go only to the configured model provider; no additional third-party recipient is introduced. History is in Host memory and is lost when the Host restarts.
-- Visible history can be restored from the Host after a page refresh. Copy any answers you want to keep permanently.
+- Later requests include earlier completed BTW turns and the main-session context at ask time, which may increase token usage.
+- Requests still go only to the configured model provider; no additional third-party recipient is introduced.
+- BTW history is held in Host memory and is lost when the Host restarts. Copy answers you need to keep permanently.
+- Visible history can be restored from the Host after a page refresh. An answer still being generated is not part of completed history.
 
 ## Settings
 
-Both entries are optional. Leaving them empty keeps the built-in behaviour: text answers only, with the shipped prompt.
-
-Open **Plugins**, find `dsh-btw-continuity`, and open **Configure** on its row. The page sits in the same place as the configuration page of `dsh-subagent-default-model`.
+Open **Plugins → BTW Continuity → Configure**:
 
 | Field | Effect |
 | --- | --- |
-| **Allowed tools** | Tool names the side question may call in addition to `send_message`, one per line (for example `pele_draw`). Empty allows text answers only, which is the default. |
-| **Custom prompt** | Instruction text that replaces the built-in side-question prompt. The box is pre-filled with the built-in prompt so you can edit it in place; saving it unchanged restores the default. |
-
-Notes:
-
-- The whitelist widens what the side question may call; the main conversation is never restricted by it. A name that does not exist simply allows nothing.
-- `send_message` is not a whitelist entry. Delivering an answer back to the main conversation stays bound to the rule that it may only target the side question's own parent session, so a whitelist entry cannot turn it into "send to any agent".
-- The custom prompt replaces the instruction prefix only. The tool-permission sentence and the reply-channel sentence are always appended, so the model never believes it can call everything.
-- Changes apply to the next side question without reloading the plugin.
-- The permission sentence names the allowed tools, so widening the whitelist changes the side-question prompt. That prompt is a trailing user message; the tool list and system prompt stay byte-identical to the main conversation, so parent prompt cache reuse is unaffected.
-
-### Example: let a side question draw diagrams
-
-[`dsh-pele`](https://github.com/hesheng01/dsh-pele) provides the `pele_draw` tool, which renders Mermaid source into an SVG card inside the conversation. Add `pele_draw` to **Allowed tools** and a side question can draw too.
-
-> Note: `dsh-pele` is a recent plugin that is not published to npm and not in the plugin marketplace yet, so it cannot be installed by searching the marketplace. Clone the repository and install its `plugin` directory into your profile:
->
-> ```bash
-> git clone https://github.com/hesheng01/dsh-pele.git
-> dsh plugin --profile <profile> add <absolute-path>/dsh-pele/plugin
-> ```
->
-> The first install needs a Host restart.
+| Allowed tools | Tool names allowed in addition to `send_message`, one per line. Text-only by default. |
+| Custom prompt | Replaces the built-in side-question prompt; tool-permission instructions are still appended. |
 
 ## Uninstallation
 
-```powershell
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-dsh plugin --profile web remove dsh-btw-continuity
+```bash
+dsh plugin --profile desktop remove dsh-btw-continuity
 ```
-
-Reload DSH afterward. Disabling or updating the plugin does not delete the main conversation's records.
 
 ## Development
 
-```powershell
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
+```bash
 npm ci --ignore-scripts
 npm run check
 ```
 
-`npm run check` runs type checking, tests, and a build.
-
-Development and builds target `0.2.2-rc.2`. `npm run test:compat` builds with that baseline and runs the test suite on each isolated host version, using a test model adapter. DOM component tests do not replace live-browser acceptance.
-
-GitHub and npm both include a ready-to-run `lib`; after changing source, run `npm run build` before committing.
-
-To install from source, run `dsh plugin --profile web add . --ignore-scripts` from the project directory, then reload DSH.
+`npm run check` performs type checking, tests, release checks, and the build. The development and build baseline is DSH `0.2.2-rc.2`.
 
 ## License
 
-[Apache-2.0](LICENSE). Copyright 2026 MichengAI.
+[Apache-2.0](LICENSE) · [Attribution and modifications](NOTICE.md)

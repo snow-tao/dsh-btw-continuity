@@ -1,226 +1,102 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/branding/dsh-btw-banner.png" alt="DSH BTW" width="100%">
-</p>
+# DSH BTW Continuity
 
-<div align="center">
+在 DeepSeek Harness 当前会话中连续旁问：单面板保留问答记录，底部直接追问，不打断主任务。
 
-# DSH BTW
+[English](README.en.md) · 简体中文 · [日本語](README.ja.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
 
-**在 DeepSeek Harness 当前会话中随手旁问，只回答，不执行**
+> **BTW Continuity 是基于 [MichengAI DSH BTW 1.3.10](https://github.com/MichengAI/dsh-btw) 的独立修改版**，遵循 Apache-2.0，并非 DeepSeek AI 或 MichengAI 官方产品。来源、版权和修改说明见 [NOTICE.md](NOTICE.md)。
 
-[简体中文](README.zh-CN.md) · [English](README.en.md) · [日本語](README.ja.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
+## 功能
 
-[更新日志](CHANGELOG.zh-CN.md) · [Apache-2.0](LICENSE)
+- **同一 session 连续对话**：所有 BTW 问答按时间顺序显示在一个面板中。
+- **底部直接追问**：展开面板即可输入；Enter 发送，Shift+Enter 换行。
+- **自适应输入框**：默认单行，随内容最多扩展至四行，超出后内部滚动；发送后恢复单行。
+- **隐藏与恢复**：X 只隐藏面板，下一次提问自动恢复可见历史。
+- **显式清空**：点击垃圾桶清空当前 session 的 BTW 历史并重新开始。
+- **保持主任务隔离**：答案默认不进入主会话；只有明确要求回传时才使用 `send_message`。
+- **只读回答**：默认不读取新文件、联网、运行命令或修改代码；可选工具白名单仍受限制。
+- **划词旁问与多语言**：支持正文划词提问、Markdown、公式、复制，以及 8 门界面语言。
 
-[![许可证：Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![DSH Web Plugin](https://img.shields.io/badge/DSH%20Web-Plugin-0f766e.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
+## 当前界面
 
-</div>
-
-> **BTW Continuity 是基于 [MichengAI DSH BTW 1.3.10](https://github.com/MichengAI/dsh-btw) 的独立修改版**，遵循 Apache-2.0，并非 DeepSeek AI 或 MichengAI 官方产品。请勿与原插件同时安装，因为两者都注册 `/btw`。来源与修改说明见 `NOTICE.md`。
-
-> DSH BTW 是社区维护的 DeepSeek Harness 插件，并非 DeepSeek AI 官方产品。在当前会话中输入 `/btw 问题`，即可基于已有上下文获得独立气泡回答，不打断主任务。支持 DSH Web 及集成 DSH Web 的桌面应用。`1.0.0` 起，不在支持列表中的宿主会被版本门拒绝，插件不会运行；已安装配置和主会话记录仍保留。
-
-## 功能概览
-
-- **上下文旁问**：根据当前会话内容解释概念、回顾结论或回答临时问题。
-- **只回答，不执行**：不会读取新文件、联网、运行命令或修改代码。
-- **单面板连续记录**：同一 session 的所有问答按顺序显示在一个面板中，支持 Markdown、公式、复制、折叠、展开、隐藏与历史恢复。
-- **不打断主任务**：旁问单独作答，答案默认不会写入主会话。
-- **需要时才回传**：想在主对话里拿到结论时，在问题中明确要求「把答案发回主对话」，旁问会用 `send_message` 把一份自足的答案发回主会话；没有要求时不会回传。
-- **随时取消**：关闭正在回答的气泡即可取消该旁问。
-- **全量国际化与主题**：跟随 DSH 浅色、深色主题；自宿主 0.2.2-rc.1 起完整支持官方 8 门内置语言（中文、英语、日语、西班牙语、法语、德语、俄语、葡萄牙语），在更早的 0.2.0～0.2.1 宿主下安全回退为中英双语。
-
-## 界面预览
-
-### 原生 DSH 中的旁问
-
-主会话保留在原来的位置，旁问答案位于输入框上方。
-
-![原生 DSH 会话中的 BTW 独立答案气泡](https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/screenshots/btw-conversation.png)
-
-### 命令入口
-
-输入 `/` 后，可在「指令」中选择 `btw`，也可以直接输入 `/btw 问题`。
-
-![官方指令菜单中的 btw 入口](https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/screenshots/btw-command-menu.png)
-
-### 独立答案气泡
-
-每条旁问单独展示，右上角提供复制、折叠或展开、关闭操作。
-
-![多条旁问气泡及复制、折叠和关闭操作](https://raw.githubusercontent.com/MichengAI/dsh-btw/2d8dd7752cec1b29dd705969eaa932635ba0bf4f/assets/screenshots/btw-bubbles.png)
-
-### 旁问配置
-
-打开 **插件**，选中 `dsh-btw-continuity`，配置表单就在详情页上——放行工具与提示词两个输入框，提示词框已预填内置文案，可以直接在上面改。
-
-![插件详情页上的旁问配置表单](assets/screenshots/btw-settings-panel.png)
-
-### 在旁问里画图
-
-把 `pele_draw` 加进白名单后，旁问也能画图。图显示在旁问面板里，主对话不受影响。
-
-![旁问调用 pele_draw 渲染流程图](assets/screenshots/btw-pele-draw.png)
-
-## DSH 产品生态
-
-想使用桌面工作台，可下载 [DSH Codex Desktop](https://github.com/MichengAI/dsh-codex-desktop/releases)；已有 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 环境，可按各项目 README 按需安装。以下列出 11 个自研插件；桌面端实际随附范围以对应版本的发行说明和内置清单为准。
-
-| 插件 | 你可以用它做什么 |
-| --- | --- |
-| [Codex UI](https://github.com/MichengAI/dsh-codex-ui) | 整理项目与会话、搜索任务、跳转对话轮次 |
-| [Agency Agents](https://github.com/MichengAI/dsh-agency-agents) | 按任务选择并召唤专业角色 |
-| [Skills Manager](https://github.com/MichengAI/dsh-skills-manager) | 统一查找、启停、创建和导入本机技能 |
-| [Archive Manager](https://github.com/MichengAI/dsh-archive-manager) | 搜索、恢复或清理已归档会话 |
-| [IM Connect](https://github.com/MichengAI/dsh-im-connect) | 从消息平台下任务、收回复 |
-| [Automation](https://github.com/MichengAI/dsh-automation) | 按计划执行任务，查看每次运行的结果 |
-| [BTW](https://github.com/MichengAI/dsh-btw) | 在当前上下文中临时旁问，不打断主任务 |
-| [Simplify](https://github.com/MichengAI/dsh-simplify) | 用 `/simplify` 整理 Git 改动范围内的代码 |
-| [PUA](https://github.com/MichengAI/dsh-pua) | 引导 Agent 在失败时换方法、查原因，并在完成前验证结果 |
-| [Code Review](https://github.com/MichengAI/dsh-code-review) | 用 `/review` 发起独立 Agent 代码审查，在当前会话接收报告 |
-| [Codex Pet](https://github.com/MichengAI/dsh-codex-pet) | 通过桌面宠物查看会话提醒、处理工具审批和问题回答 |
+![BTW Continuity 单面板连续对话、历史记录与底部追问输入框](assets/screenshots/btw-continuity-panel.webp)
 
 ## 前置条件
 
-- 已安装 DeepSeek Harness。
-- 宿主支持范围：DeepSeek Harness `0.2.x` 全系列（`>=0.2.0-rc.1 <0.3.0-0`），已验证兼容 `0.2.0-rc.1`、`0.2.0-rc.2`、`0.2.1-rc.1`～`0.2.1-rc.5`、`0.2.2-rc.1`、`0.2.2-rc.2`，并自动支持后续 `0.2.x` 的全部 0.2.x RC 版本，同代宿主升级无需重复等待发版。
-- 语言支持范围：自 DeepSeek Harness `0.2.2-rc.1` 起原生可选全部 8 门内置语言；在 `0.2.0`～`0.2.1` 宿主下额外注册的语言保持惰性，界面安全回退为中文与英文。
-- 不再支持 `0.2.0-rc.1` 之前的早期宿主，遇到 `0.3.0` 代际破坏性更新时将被版本门安全拦截。仍在使用 `0.1.x` 的用户请安装插件 `0.1.24`。
-- Node.js 22+，可在终端执行 `dsh`。
+- DeepSeek Harness `>=0.2.0-rc.1 <0.3.0-0`
+- Node.js 22+
+- 已配置可用的模型服务
+
+**不要与原插件 `@michengai/dsh-btw` 同时安装或启用**，两者都会注册 `/btw`。
 
 ## 安装
 
-以下命令使用 `web` profile，请按实际环境替换。安装前停用其他提供 `/btw` 命令的插件。
+将 `desktop` 替换为你的实际 profile：
 
-### 让 Agent 帮你安装（推荐）
-
-把下面这段话发给任意能够执行本机终端命令的 Agent。将 `web` 替换为实际使用的 profile；安装完成后，在 DSH 中使用本插件。
-
-```text
-请将 DSH 插件 dsh-btw-continuity 安装到本机 web profile，执行：dsh plugin --profile web add dsh-btw-continuity@latest --registry=https://registry.npmjs.org/。安装后执行 dsh --profile web --dump-config，确认配置包含 dsh-btw-continuity，并告诉我如何重新加载 DSH 和开始使用。
+```bash
+dsh plugin --profile desktop add dsh-btw-continuity@latest --registry=https://registry.npmjs.org/
 ```
 
-### 手动从 npm 安装
-
-```powershell
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-dsh plugin --profile web add dsh-btw-continuity@latest --registry=https://registry.npmjs.org/
-```
-
-### 重新加载
-
-请在当前任务结束后安装或更新，桌面应用可能自动重载。若未生效，使用桌面应用的“重新加载”，或重启 `dsh web` 服务；仅刷新浏览器不够。
-
-`0.2.0` 之前的宿主，以及 `0.2.1` alpha，安装 `@latest` 会被版本门拒绝，插件不会运行。`0.1.x` 请改装 `0.1.24`。拒绝不会删除已有配置或主会话记录。
+如果未自动生效，请重新加载桌面应用或重启对应 DSH 服务；仅刷新浏览器可能不足以加载新的 Host 代码。
 
 ## 使用
 
-### 划词旁问
-
-在会话单条正文中选中文字，在选区上方的横条选择「旁问」，输入问题后按 Enter 发送，或点击「解释一下」。Shift+Enter 换行，Esc 取消。回答仍显示在独立 BTW 气泡中，引用原文可展开查看。
-
-- 支持普通段落、列表和代码块文字；一次引用最多 8000 个 UTF-16 代码单元（包括空白），超限会提示，不会截断。
-- 引用在划词时固定，正文继续生成不会改变它；其他背景使用发送时主会话已完成的内容。
-- 不占用或清空主输入框草稿；跨消息选区、输入框和工具输出不提供该菜单。
-- 横条还提供「添加到对话」，将引用追加到已有草稿并聚焦输入框，不自动发送；消息提交期间暂停添加。右键保留浏览器原有菜单。
-- 支持焦点位于正文元素内的键盘选区，释放 Shift 后聚焦横条。不支持 Popover API 的浏览器使用 fixed 浮层降级，可能受到宿主布局裁切。
-- 与 `dsh-better-sidebar` 分区域处理：BTW 仅处理会话正文，文件预览与编辑器保留侧边栏插件原有「添加到对话」选项，不重复弹出工具条。
-- 新入口依赖宿主正文 DOM 标记。无法识别的布局保留原有右键行为，仍可使用 `/btw`。
-
-### 命令旁问
-
-在已有上下文的会话中输入：
+### 开启或追加旁问
 
 ```text
 /btw 用一句话总结刚才的方案
 ```
 
-| 目标 | 操作 |
+也可以从 `/` 指令菜单选择 `btw`，或在会话正文中划词后选择「旁问」。
+
+### 在面板中追问
+
+展开 BTW 面板，在底部独立输入框直接提问：
+
+- **Enter**：发送；
+- **Shift+Enter**：换行；
+- 输入框默认单行，最多自动扩展到四行；
+- 面板内追问与再次使用 `/btw` 共享同一份历史。
+
+### 隐藏、恢复和清空
+
+| 操作 | 行为 |
 | --- | --- |
-| 提一个旁问 | 输入 `/btw 问题` 并提交，或从 `/` 菜单选择 `btw`。 |
-| 查看答案 | 等待输入框上方的同一个 BTW 面板返回回答；所有轮次按顺序显示。 |
-| 复制答案 | 点击气泡右上角的复制图标。 |
-| 收起或展开 | 点击气泡右上角的折叠或展开图标。 |
-| 取消旁问 | 在回答过程中关闭对应气泡，不取消主任务。 |
-| 暂时隐藏答案 | 关闭气泡；不会清除 BTW 历史，下一次 `/btw` 会恢复此前的气泡。 |
-| 继续提问 | 在展开面板底部的独立输入框直接追问（Enter 发送、Shift+Enter 换行），或再次输入 `/btw 问题`；两种方式共享当前 session 的 BTW 历史。 |
-| 清空 BTW 对话 | 点击气泡右上角的垃圾桶图标，清空当前 session 的 BTW 历史与气泡；下一次提问从头开始。 |
+| X | 隐藏整个 BTW 面板，不清除历史；下一次提问恢复。 |
+| 垃圾桶 | 清空当前 session 的全部 BTW 历史并移除面板；下一次提问从头开始。 |
+| 复制 | 复制对应回答的原始 Markdown。 |
 
-若需要执行命令、修改代码或继续主任务，请通过普通会话提交。BTW 只能依据已有上下文作答。
+### 历史与隐私
 
-BTW 只接受文字。输入框中附带图片或普通文件时会拒绝旁问，并保留输入和附件，请移除附件后重试。
-
-### 使用说明
-
-- 同一 session 的 BTW 默认是一条连续侧对话：后续提问会继承此前已完成的 BTW 问答，同时参考提问时主会话已完成的内容；不包含正在生成的回答。
-- 点击垃圾桶会取消当前 session 尚未完成的 BTW、清空其 BTW 历史并移除气泡；普通关闭只隐藏单个气泡，下一次提问自动恢复，不影响历史。主会话记录始终不受影响。
-- 连续模式会把此前 BTW 问答加入后续模型请求，可能增加 token 消耗；数据仍只发往当前配置的模型服务，不新增第三方接收方。历史保存在 Host 内存中，Host 重启后会丢失。
-- 刷新页面后气泡可通过 Host 历史恢复；需要长期保存的答案请先复制。
+- 后续请求会继承此前已完成的 BTW 问答以及提问时的主会话上下文，因此可能增加 token 消耗。
+- 请求仍只发往当前配置的模型服务，不新增第三方接收方。
+- BTW 历史保存在 Host 内存中，Host 重启后会丢失；需要长期保存的答案请先复制。
+- 刷新页面后可从 Host 历史恢复面板。正在生成的回答不计入已完成历史。
 
 ## 配置
 
-下面两项都是可选的。两项都留空时保持出厂行为：只允许纯文字回答，使用内置提示词。
-
-打开 **插件**，找到 `dsh-btw-continuity`，点击该行的 **配置**。配置页位置与 `dsh-subagent-default-model` 的配置页相同。
+在 **插件 → BTW Continuity → 配置** 中可调整：
 
 | 配置项 | 作用 |
 | --- | --- |
-| **放行工具** | 除 `send_message` 之外，旁问还允许调用的工具名，每行一个（例如 `pele_draw`）。留空表示只允许纯文字回答，这也是默认值。 |
-| **自定义提示词** | 替换内置的旁问提示词。输入框已预填内置文案，可直接在上面修改；原样保存即恢复默认。 |
-
-说明：
-
-- 白名单只放宽旁问能调用的范围，从不限制主对话；写了不存在的工具名，等于什么都没放行。
-- `send_message` 不能写进白名单。把答案回传主对话仍然只允许发给旁问自己的父会话，白名单无法把它变成「发给任意 agent」。
-- 自定义提示词只替换指令前缀；工具权限说明与回传通道说明始终追加在末尾，避免模型误以为可以随意调用工具。
-- 改完对下一次旁问生效，不需要重新加载插件。
-- 权限说明里会点名放行的工具，因此放宽白名单会改变旁问提示词。它属于末尾的用户消息，工具定义与系统提示词仍与主会话逐字节一致，不影响主会话的 prompt cache 复用。
-
-### 示例：让旁问画图
-
-[`dsh-pele`](https://github.com/hesheng01/dsh-pele) 提供 `pele_draw` 工具，把 Mermaid 源码渲染成会话里的 SVG 图表卡片。把 `pele_draw` 填进 **放行工具**，旁问也能画图。
-
-> 注意：`dsh-pele` 是最近新出的插件，还没有发布到 npm，也暂时没上架插件市场，因此在插件市场里搜不到。安装方式是从 GitHub 克隆仓库，把其中的 `plugin` 目录装进 profile：
->
-> ```bash
-> git clone https://github.com/hesheng01/dsh-pele.git
-> dsh plugin --profile <profile> add <绝对路径>/dsh-pele/plugin
-> ```
->
-> 首次接入需要重启 Host。
+| 放行工具 | 除 `send_message` 外允许使用的工具名，每行一个。默认仅文字回答。 |
+| 自定义提示词 | 替换内置旁问提示词；工具权限说明仍会追加。 |
 
 ## 卸载
 
-```powershell
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-dsh plugin --profile web remove dsh-btw-continuity
+```bash
+dsh plugin --profile desktop remove dsh-btw-continuity
 ```
-
-重新加载 DSH 后生效。停用或升级不会删除主会话记录。
 
 ## 本地开发
 
-```powershell
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+```bash
 npm ci --ignore-scripts
 npm run check
 ```
 
-`npm run check` 执行类型检查、测试和构建。
-
-开发与构建基线为 `0.2.2-rc.2`。`npm run test:compat` 用该基线编译，再在各隔离宿主版本中分别运行测试集，模型使用测试适配器。DOM 组件测试不替代真实浏览器验收。
-
-GitHub 与 npm 都包含可直接运行的 `lib`；改了源码后，提交前运行 `npm run build`。
-
-从源码安装时，在项目目录执行 `dsh plugin --profile web add . --ignore-scripts`，然后重新加载 DSH。
+`npm run check` 执行类型检查、测试、发布检查和构建。开发与构建基线为 DSH `0.2.2-rc.2`。
 
 ## 许可证
 
-[Apache-2.0](LICENSE) © 2026 MichengAI。
+[Apache-2.0](LICENSE) · [来源与修改说明](NOTICE.md)

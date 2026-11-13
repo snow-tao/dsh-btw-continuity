@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.2] - 2026-11-13
+
+- **Revise all release documentation**: Update all eight READMEs for the single-panel conversation, inline composer, history restoration, privacy, and the new package name.
+- **Replace outdated screenshots**: Remove upstream multi-bubble images and use a current BTW-only panel screenshot without main-conversation content.
+
 ## [1.5.1] - 2026-11-13
 
 - **Auto-growing follow-up composer**: Starts at one line, grows up to four lines, then scrolls internally. It returns to one line after sending while the send button keeps a fixed size.
