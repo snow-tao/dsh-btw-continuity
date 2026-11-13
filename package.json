@@ -5,15 +5,15 @@
   "upstream": "https://github.com/MichengAI/dsh-btw",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shangjin-plaud/dsh-btw-continuity.git"
+    "url": "git+https://github.com/snow-tao/dsh-btw-continuity.git"
   },
-  "homepage": "https://github.com/shangjin-plaud/dsh-btw-continuity#readme",
+  "homepage": "https://github.com/snow-tao/dsh-btw-continuity#readme",
   "bugs": {
-    "url": "https://github.com/shangjin-plaud/dsh-btw-continuity/issues"
+    "url": "https://github.com/snow-tao/dsh-btw-continuity/issues"
   },
   "author": {
-    "name": "shangjin-plaud",
-    "url": "https://github.com/shangjin-plaud"
+    "name": "snow-tao",
+    "url": "https://github.com/snow-tao"
   },
   "keywords": [
     "dsh",
