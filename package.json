@@ -1,0 +1,170 @@
+{
+  "name": "dsh-btw-continuity",
+  "version": "1.5.1",
+  "description": "DSH 单面板连续旁问：共享 session 历史、底部直接追问、垃圾桶清空 · Single-panel BTW chat with inline follow-ups and clear history",
+  "upstream": "https://github.com/MichengAI/dsh-btw",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shangjin-plaud/dsh-btw-continuity.git"
+  },
+  "homepage": "https://github.com/shangjin-plaud/dsh-btw-continuity#readme",
+  "bugs": {
+    "url": "https://github.com/shangjin-plaud/dsh-btw-continuity/issues"
+  },
+  "author": {
+    "name": "shangjin-plaud",
+    "url": "https://github.com/shangjin-plaud"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "btw",
+    "side-ask",
+    "quote",
+    "context-ask",
+    "assistant"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./icon": "./assets/icon.svg",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "locale",
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh-CN.md",
+    "README.en.md",
+    "README.ja.md",
+    "README.es.md",
+    "README.fr.md",
+    "README.de.md",
+    "README.ru.md",
+    "README.pt.md",
+    "CHANGELOG.md",
+    "CHANGELOG.zh-CN.md",
+    "LICENSE",
+    "NOTICE.md",
+    "assets/icon.svg"
+  ],
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-input-trigger",
+        "@deepseek-ai/dsh-client-ui-primitives",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:release": "node --test tests/release.test.mjs tests/npm-oidc.test.mjs tests/github-release.test.mjs",
+    "check": "npm run typecheck && npm test && npm run test:release && npm run build",
+    "prepack": "npm run build",
+    "test:compat": "node scripts/test-compatibility.mjs"
+  },
+  "engines": {
+    "node": ">=22",
+    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@deepseek-ai/schemastery": ">=3.18.1 <4.0.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-client-ui-input-trigger": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-client-ui-primitives": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-client-ui-settings": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-commands": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-session": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-subagent": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-system-prompt": ">=0.2.0-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.1 <0.3.0-0",
+    "react": "^18.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-ui-settings": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.1.0",
+    "@deepseek-ai/dsh-agent": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-agent-loop": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-api-gateway": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-api-session-controller": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-attachment": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-connection": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-locale": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-chat": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-input-trigger": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-primitives": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-client-ui-theme": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-commands": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-error": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-ptc-runtime": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-sandbox": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-sandbox-policy": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-scope": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-session": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-session-persistence": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-session-projection": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-subagent": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-subagent-fork-in-process": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-system-prompt": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-typert-registry": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-user-approval": "0.2.2-rc.2",
+    "@deepseek-ai/dsh-util-time": "0.2.2-rc.2",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.7",
+    "@types/semver": "^7.5.8",
+    "clsx": "^2.1.1",
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.1.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "semver": "^7.7.3",
+    "typescript": "~5.7.2",
+    "vitest": "^3.2.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  },
+  "icon": "assets/icon.svg"
+}

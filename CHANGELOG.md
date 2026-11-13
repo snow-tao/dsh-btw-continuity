@@ -1,0 +1,272 @@
+# Changelog
+
+## [1.5.1] - 2026-11-13
+
+- **Auto-growing follow-up composer**: Starts at one line, grows up to four lines, then scrolls internally. It returns to one line after sending while the send button keeps a fixed size.
+
+## [1.5.0] - 2026-11-13
+
+- **Single-panel continuous chat**: All BTW turns in a session appear chronologically in one panel instead of separate bubbles.
+- **Inline follow-ups**: The expanded panel includes a dedicated composer. Enter sends, Shift+Enter inserts a newline, and inline questions share the same history as `/btw`.
+
+## [1.4.1] - 2026-11-13
+
+- **Restore history hidden with X**: Closing a bubble now only hides it; the next BTW question in the same session restores earlier visible turns. The trash button still clears the conversation completely.
+
+## [1.4.0] - 2026-11-13
+
+- **Session-scoped continuous BTW conversations**: Follow-up side questions inherit earlier completed BTW turns by default, while histories remain isolated between main sessions.
+- **Clear from the bubble toolbar**: A trash icon cancels active side questions for the session, clears its BTW history, and removes old bubbles. Closing a single bubble does not clear history or affect the main conversation.
+
+## [1.3.10] - 2026-11-12
+
+- **Full compatibility with latest DeepSeek Harness host releases**: Integrates smoothly with the latest host session lifecycle and message delivery mechanisms, resolving an issue where side-ask requests could fail to start on newer host environments.
+- **Accurate and reliable answer delivery back to caller conversations**: Enhances side-ask conclusion delivery so that answers returned to the main conversation reliably reach the exact conversation that initiated the side ask, preventing cross-session delivery confusion in nested agent structures; conversation prompts and delivery hints automatically match the active host version.
+- **Extended host compatibility matrix**: Verified full compatibility with DeepSeek Harness `0.2.2-rc.2`, supporting the complete `0.2.x` RC release spectrum (`0.2.0-rc.1` through `0.2.2-rc.2`).
+
+## [1.3.8] - 2026-11-10
+
+- **Align side-ask bubble and dock styling with native conversation dock tokens**: Adapts the outer dock layout to match host drawer inset geometry, eliminating horizontal width mismatch when task lists or plan status bars are active; upgrades bubble surface to native frosted menu material and soft elevation styling for seamless visual integration (#26).
+- **Refine collapsed header compactness and action touch targets**: Tightens header minimum height to 36px and standardizes circular 28px action buttons with matching gap rhythms to match native host toolbar primitives.
+- **Polish multiline question typography**: Corrects viewport clipping on multiline side-questions to smoothly accommodate full 3-line question headers without baseline truncation or unwanted scrollbars.
+
+## [1.3.7] - 2026-11-09
+
+- **Package size refinement and legacy asset pruning**: Eliminates redundant legacy components and unused multilingual dictionary keys across all supported languages, resulting in a cleaner and faster loading package.
+- **Visual styling enhancement for quoted context tag**: Adapts the reference source badge in the side-question modal into an inline pill chip aligned with native theme primitives.
+- **Settings list alignment polish**: Enhances layout and margin styling for plugin settings row summaries to ensure consistent visual harmony across hosts.
+
+## [1.3.6] - 2026-11-09
+
+- **Full support for all 8 official DeepSeek Harness languages**: Natively provides faithful localized text for Chinese, English, Japanese, Spanish, French, German, Russian, and Portuguese (`zh`, `en`, `ja`, `es`, `fr`, `de`, `ru`, `pt`). From host `0.2.2-rc.1` onwards, the text-selection menu, side-ask bubbles, action buttons, and settings configuration card dynamically adapt to the selected language; earlier hosts safely fall back to Chinese and English.
+- **Dedicated full-fidelity documentation for all 8 languages**: Ships comprehensive localized README documentation variants for all supported languages, covering quick-action tables, configuration rules, and development guidelines.
+- **Plugin metadata enrichment and interface refinement**: Registers complete author information, keywords, and icon exports while pruning internal redundant properties to ensure responsive, lightweight interactions.
+
+## [1.3.5] - 2026-11-06
+
+- Fix side questions failing to start when DSH is opened over a plain-HTTP LAN address: browsers do not expose `crypto.randomUUID` in a non-secure context, so asking a side question failed with an error. Request ids now come from a random source that works in every context, so LAN access behaves the same as local access (#25).
+
+## [1.3.3] - 2026-11-04
+
+### Compatibility & Dependencies
+
+- Align with official DSH `0.2.2-rc.1` release; upgrade development dependencies to `0.2.2-rc.1`.
+- Clean up obsolete alpha versions from the host compatibility matrix; support all `0.2.x` RC hosts (`0.2.0-rc.1` through `0.2.2-rc.1`).
+- Update documentation badges and verified build ranges.
+
+## [1.3.2] - 2026-11-03
+
+- Extend host compatibility support: verified compatibility across DSH latest prerelease `0.2.2-alpha.3` and all RCs up to `0.2.1-rc.5`, ensuring seamless side-ask interaction on newer hosts.
+
+## [1.3.1] - 2026-11-01
+
+- Isolate quote rule ID to prevent host crash: migrate blockquote matching rule ID and slot key to dedicated `dsh-btw-blockquote` namespace instead of borrowing the official `quote` identifier, and yield dynamically at render time and on registry change when `@deepseek-ai/dsh-message-quotes` is present. Fixes fatal `Failed to load plugins` crashes on newer hosts shipping the official quote package while preserving seamless blockquote styling on older hosts (#24).
+- Prevent user prompt text swallowing in quote prompt parsing: refine quote prompt block delimiter boundary so that text following an excerpt is never swallowed into the quote chip even when submitted without an explicit heading separator (#23).
+- Preserve leading code indentation and support EOF quote submission: constrain separator heading to a standalone line, preserve 4-space and Tab code block indentations on the subsequent user text line, and cleanly consume delimiter headings when sending quotes with an empty draft (#23).
+- Isolate bubble DOM structure: replace semantic `<header>` with a dedicated `div` and use a plugin-private `data-btw-phase` attribute to prevent theme macro rules (such as Codex UI mica floating headers) from accidentally styling the side-ask header as a detached floating card.
+
+## [1.3.0] - 2026-10-29
+
+- Configurable tool whitelist: add a settings page on the plugin's row in **Plugins** (the same place as `dsh-subagent-default-model`'s configuration) where a comma-free, one-per-line list of tool names widens what a side question may call. The execution-time guard reads the whitelist on every call, so changes apply to the next side question without reloading the plugin. Empty keeps the previous text-only behaviour (#22).
+- Configurable prompt: the same page can replace the built-in side-question prompt. The tool-permission sentence and the reply-channel sentence are always appended, so a custom prompt cannot talk the model past the guard, and `send_message` stays outside the whitelist so returning an answer is still bound to the parent session (#22).
+- Keep parent prompt cache intact: the whitelist and custom prompt only change the trailing user message; tool definitions and system prompt stay byte-identical to the main conversation (#22).
+- Pre-fill prompt box with built-in text: opening settings shows the actual prompt to edit in place instead of a blank box. Saving it unchanged restores the default rather than pinning a stale snapshot into configuration (#22).
+
+## [1.2.0] - 2026-10-29
+
+- Align with official message quotes specification: Pixel-perfect adoption of `@deepseek-ai/dsh-message-quotes` text selection interactions. Seamlessly integrate into the native `conversation.chat.text-interaction` slot on newer hosts while providing an exact floating fallback on older hosts.
+- Deterministic selection toolbar ordering: Lock toolbar layout with "Quote text" on the left and "Ask BTW" on the right with a 6px gap, completely eliminating race-condition button jumping and capsule squeezing.
+- Clean composer with rich-text quote link: Render quotes as inline rich-text link cards inside the input composer and completely eliminate obsolete floating pill bars above the composer.
+- Bubble quote cards and HoverCard full-text preview: Elevate user bubble quotes to inline quote cards with native double-quote SVG markers and ellipsis overflow, accompanied by full-text HoverCard popovers on mouse hover.
+- Compatibility matrix expansion: Broaden multi-host compatibility test suites to encompass the latest Release Candidate (`0.2.0-rc.2`) and latest Alpha release (`0.3.0-alpha.0`), ensuring 100% parity from `0.2.0-rc.1` through cutting-edge hosts.
+
+## [1.1.1] - 2026-10-27
+
+- Add official plugin vector icon: Introduce `assets/icon.svg` (transparent vector icon designed with dual bubbles and thought sparkles) and declare `icon` in the plugin manifest for better visual representation in the host extension manager and marketplace.
+- Update release verification whitelist: Include plugin icon in npm package check and file integrity validation.
+
+## [1.1.0] - 2026-10-26
+
+- Return an answer to the main conversation on request: a side ask may now call the host's inherited `send_message` — but only addressed at its own parent session (`agent_id` = `session.header.parentSession`) — so the conclusion can be delivered back when the user asks for it. Every other tool call, and any `send_message` aimed at another agent, stays rejected. Reusing one inherited tool instead of registering a new one keeps the side-ask request's tool list byte-identical, so parent prompt cache reuse is preserved.
+- State the reply channel in the prompt: the side-ask prompt now says answers stay in the bubble by default, names the parent agent id, and limits returning to the case where the user explicitly asks for it.
+
+## [1.0.9] - 2026-10-26
+
+- Deterministically block tool execution inside `/btw` bubbles: pre-register the child session id before the side question starts, so interception no longer depends on the host announcing the child agent in time (#21).
+- Fall back to the child session's own descriptor when the host subagent projection carries no label, closing the remaining silent-allow path (#21).
+- Harden the guard: an unreadable session snapshot now falls back to the previous allow-on-unknown behavior instead of surfacing an error in the tool call, and the pre-registered id is released as soon as the side question settles.
+
+## [1.0.8] - 2026-10-24
+
+- Upgrade build-time development dependencies: Bump all `@deepseek-ai/dsh-*` devDependencies to latest `0.2.1-rc.3` to keep type declarations and build toolchains strictly aligned.
+
+## [1.0.7] - 2026-10-24
+
+- Upgrade host admission policy: Declare `engines.dsh: ">=0.2.0-rc.1 <0.3.0-0"` to support the entire DeepSeek Harness `0.2.x` line (including `0.2.0-rc.1` onwards, future `0.2.x-alpha.*`, `0.2.x-rc.*`, and stable releases) without requiring routine plugin version bumps.
+- Decouple peerDependencies version pinning: Broaden `@deepseek-ai/dsh-*` peer ranges to the `0.2.x` generation to prevent version-gate refusals on new host releases.
+- Automated admission boundary verification: Add contract boundary tests to verify seamless admission of `0.2.x` prereleases while strictly blocking `0.3.0` breaking changes.
+
+## [1.0.6] - 2026-10-24
+
+- Restore composer focus immediately after adding quotes from text selection, allowing uninterrupted keyboard typing and command entry (#18).
+- Reuse parent session prompt cache for side questions by keeping tools, system prompt, and message history identical, drastically reducing side-ask token costs and first-token latency (#16).
+- Clamp side-question output budget (up to 32,000 completion tokens) against parent maxTokens, preventing HTTP 400 window overflow errors on ultra-long context sessions (#19).
+- Forward output token budget on legacy DSH 0.2.0 `subagents.start` path and provide bilingual tool execution denial notices.
+
+## [1.0.5] - 2026-10-24
+
+- Support DeepSeek Harness `0.2.1-rc.3` while retaining all existing supported versions.
+
+## [1.0.4] - 2026-10-22
+
+- Support structured quote references via host input trigger channel: Register `@dsh-btw-quote` source with dedicated clipboard and model prompt codecs, allowing quotes to be managed as atomic mention references without flattening long excerpts into composer drafts (#12).
+- Render quote context in conversation bubbles as native ReferenceChip capsules: Parse leading selected context blocks into structured quote nodes, rendering compact capsules at the top of message bubbles with full card details mounted via React Portal to prevent container clipping (#12).
+- Multi-card popover list with independent navigation: Display multiple referenced excerpts as discrete cards with distinct provenance badges, scrolling preview, and dedicated "Jump to source" actions for pinpoint anchor navigation (#12).
+- Fortify quote heading parser against false positives: Enforce whitespace-only prefix bounds and require at least one valid quote item before creating a capsule, preventing in-text discussions or bare headings from being captured (#12).
+- Harmonize detect coordinates and bilingual locale support: Use `captureInsertion()` for accurate detect-span offsets across existing mention chips, bind slot locale to `QuoteUserTextNode`, and complete bilingual localization (#12).
+- Add `@deepseek-ai/dsh-client-ui-input-trigger` to peerDependencies across all supported host versions (0.2.0-rc.1 through 0.2.1-rc.2).
+
+## [1.0.3] - 2026-10-22
+
+- Fix main-session tool calls being suppressed when quoting text: Remove side-ask-specific tool prohibition instructions from quote prompt formatting so the main agent can still invoke tools as needed (#11).
+- Prevent Enter key and click event overreach in dialogs: Exclude selection modals and dialogs from global keydown capture and click handlers, preventing side-question input from polluting the main draft (#13).
+- Guard draft merging and expansion against non-plain submission phases: Prevent quote data loss when submitting messages in flight (#13).
+- Refine quote deduplication and prevent empty-question submission: Deduplicate quotes by content, role, and turn index to support identical excerpts across turns, and intercept Enter on empty drafts to avoid sending blank queries (#14).
+- Distinguish host send and stop buttons: Accurately match send, queue, and steer message actions in the host InputBar while explicitly ignoring the stop generation button, avoiding premature quote consumption (#13).
+- Support multiple quotes on the same DOM element and improve anchor lifecycle: Store space-separated anchor IDs on DOM nodes, recycle `data-btw-anchor` upon quote removal, and align fallback jump turn counting strictly with selection logic (#15).
+- Unify terminology and enforce quote limits: Unify quote and note wording across UI and prompt, cap cumulative quotes at 16,000 characters with localized error messages, and clean up legacy callbacks (#15).
+
+## [1.0.2] - 2026-10-21
+
+- Prevent tool-call pattern pollution from inherited session context: Inject high-priority negative tool constraints into the trailing user prompt, instructing models that all tools are disabled and strictly forbidding tool calls or call tags in favor of direct text answers (#10).
+- Add resilient sanitization on model outputs: Automatically strip leftover `<tool_call>` and `<function_call>` raw pseudo-blocks from the generated text, ensuring answers displayed in the bubble remain clean and well-formed (#10).
+
+## [1.0.1] - 2026-10-21
+
+- Align selection quoting and annotations with the Codex experience: Render a compact rounded pill above the composer, open an annotation drawer on click, support optional comments on selections, and serialize provenance metadata cleanly before send without flooding the main draft (#8).
+- Integrate the host's native `<Modal>` and `<Button>` primitives for the selection question dialog, dropping custom overlays and aligning fully with host tokens and themes.
+- Standardize subagent naming to "Side Question Expert", aligning with the expert agent roster and eliminating internal debug UUIDs from the task list.
+- Enhance prompt structuring and guidance for selections, preventing instruction injection from quoted text and directing models to focus on the user's intent.
+
+## [1.0.0] - 2026-10-17
+
+- Supported hosts are now DeepSeek Harness `0.2.0-rc.1`, `0.2.0-rc.2`, `0.2.1-rc.1`, and `0.2.1-rc.2`. Hosts before `0.2.0`, and `0.2.1` alphas, are rejected by the version gate, and the plugin will not load or run. Installed configuration and main-conversation records are kept. If you still use a `0.1.x` host, install plugin `0.1.24` instead of `@latest`.
+- `0.2.1-rc.1` and later use `startActivation`. `0.2.0-rc.1` and `0.2.0-rc.2` still use `subagents.start`.
+
+## [0.1.24] - 2026-10-15
+
+- Side questions are no longer offered in a subagent session. Typing `/btw` there explains that you should return to the main session, instead of leaving a dialog that cannot be closed (#7).
+- Closing a side question that the host rejects because the session is owned by subagent routing no longer deletes an answer that is still on the way or already returned. A request that never started, or was cancelled before it produced an answer, can still be dismissed locally.
+
+## [0.1.23] - 2026-10-15
+
+- Relax hardcoded timeout: Replace the strict 90s timer with a 30-minute watchdog, supporting long chain-of-thought and max-reasoning models while safeguarding concurrency slots against stalled connections (#6).
+- Prominent stop button during answering: Display a dedicated stop button with alert styling during generation, allowing users to manually abort reasoning and release subagent resources immediately (#6).
+- Smart auto-collapse for older side-question bubbles: Automatically collapse older bubbles when new side questions arrive, keeping the input area neat while preserving manual expansion controls and robust focus recovery.
+- Seamless dual-generation host compatibility: Retain strict typings for DSH 0.2.1-alpha.3+ `startActivation` while providing a robust `subagents.start` fallback for DSH 0.2.0-rc.2 and earlier.
+
+## [0.1.22] - 2026-10-15
+
+- Support DSH `0.2.1-alpha.3` while retaining all existing supported versions; pin development `@deepseek-ai/dsh*` dependencies to host `0.2.1-alpha.3` and Cordis to `4.0.5-alpha.2`.
+- Drop removed host package `@deepseek-ai/dsh-invariants` from development dependencies (gone since alpha.1).
+- Adapt the subagent breaking change: `ctx.subagents.start` and start-time `persona` / `toolFilter` are gone; use `startActivation` with `delivery: 'caller'`, and restore the side-ask persona plus empty tool allow-list on the child's `agent/created` via a scoped persona section and `tools.restrict`.
+- Fix the host regression that still called `tools.presentAs('both')` after alpha.2 removed that mode; the guard test covers `native` (scoped tools) and `ptc` (`run_code`) separately.
+
+## [0.1.21] - 2026-10-14
+
+- Use the raised layer token (`--dsw-alias-bg-layer-2`) for the selection question dialog and answer bubbles, fixing see-through text under wallpaper and transparent-canvas themes.
+
+## [0.1.20] - 2026-10-13
+
+- Tag injected styles with plugin ownership so the selection action bar keeps its rounded dark theme and does not fall back to browser default popover boxes after host theme changes or client reloads.
+
+## [0.1.19] - 2026-10-12
+
+- Support DSH `0.2.1-alpha.2` while retaining all existing supported versions.
+
+## [0.1.18] - 2026-10-10
+
+- Side questions start again when dsh-tui is installed. The plugin no longer fails to activate, so `/btw` stays available on hosts that use the command registry. Side questions still only answer and do not run tools. A side question that is still cleaning up after the plugin is removed cannot suddenly run tools.
+
+## [0.1.17] - 2026-10-07
+
+- Side-question answers use the host Markdown renderer, so `$...$`, `$$...$$`, and TeX delimiters render as formulas, matching the main conversation. Hosts without that renderer still show the original text. Copy keeps the raw Markdown, and answers do not load remote images.
+- A code block’s own copy button says “Copy code” instead of reusing the whole-answer label.
+
+## [0.1.16] - 2026-10-06
+
+- The installed-plugin list shows “BTW” and a localized description instead of the package name. Titles and descriptions come from `meta.title` and `meta.description` in `locale/zh.json` and `locale/en.json`.
+- Installing from GitHub now includes the compiled runtime, so no manual build is required.
+
+## [0.1.15] - 2026-09-30
+
+- Support DSH `0.2.0-rc.2` and keep the previous seven hosts working. Supported hosts are `0.1.2-rc.1`, `0.1.5-rc.1`, `0.1.5-rc.2`, `0.1.5-rc.3`, `0.1.7-rc.1`, `0.1.7-rc.2`, `0.2.0-rc.1`, and `0.2.0-rc.2`.
+
+## [0.1.14] - 2026-09-28
+
+- Support DSH `0.2.0-rc.1` and keep the previous seven hosts working. Supported hosts are `0.1.0-rc.8`, `0.1.1-rc.2`, `0.1.2-rc.1`, `0.1.5-rc.1`, `0.1.5-rc.2`, `0.1.7-rc.1`, `0.1.7-rc.2`, and `0.2.0-rc.1`.
+
+## [0.1.13] - 2026-09-25
+
+- Support DSH `0.1.7-rc.2` and keep `0.1.7-rc.1` working. Supported hosts are `0.1.0-rc.8`, `0.1.1-rc.2`, `0.1.2-rc.1`, `0.1.5-rc.1`, `0.1.5-rc.2`, `0.1.7-rc.1`, and `0.1.7-rc.2`.
+
+## [0.1.12] - 2026-09-24
+
+- Support DSH `0.1.7-rc.1` and drop alpha host versions from the compatibility list. The remaining supported hosts are `0.1.0-rc.8`, `0.1.1-rc.2`, `0.1.2-rc.1`, `0.1.5-rc.1`, `0.1.5-rc.2`, and `0.1.7-rc.1`.
+
+## [0.1.11] - 2026-09-22
+
+- Support DSH `0.1.7-alpha.1` while retaining compatibility with the seven previously supported host versions.
+
+## [0.1.10] - 2026-09-18
+
+- List `/btw` in the official command catalog with a label, description, and icon.
+- Keep independent bubbles when submitting from the official catalog; side questions still do not run tools.
+
+## [0.1.9] - 2026-09-18
+
+- Support DSH `0.1.6-alpha.2` while retaining compatibility with the six previously supported host versions.
+- Use the official composer focus action when adding a quote to the conversation.
+
+## [0.1.8] - 2026-09-16
+
+- Support DSH `0.1.6-alpha.1` while retaining compatibility with the five previously supported host versions.
+
+## [0.1.7] - 2026-09-13
+
+- Add a compact conversation text-selection toolbar to quote text in the composer or ask an independent BTW question, alongside sidebar file-selection actions.
+- Improve selection dismissal, keyboard interaction, and quote insertion; preserve code line breaks and provide a floating-toolbar fallback for browsers without the Popover API.
+
+## [0.1.6] - 2026-09-11
+
+- Support DSH `0.1.5-rc.2` while retaining compatibility with the four previously supported host versions.
+
+## [0.1.5] - 2026-09-10
+
+- Support DSH `0.1.5-rc.1`, while retaining compatibility with `0.1.0-rc.8`, `0.1.1-rc.2`, and `0.1.2-rc.1`.
+- Adapt to the updated composer: side questions accept text only. Images or files prompt you to remove them while preserving your draft and attachments.
+
+## [0.1.4] - 2026-09-07
+
+- Reduce the installation package size; side-question behavior is unchanged.
+
+## [0.1.3] - 2026-09-06
+
+- Fix the package publishing failure; side-question behavior is unchanged.
+
+## [0.1.2] - 2026-09-06
+
+- Add a GitHub Actions dry-run check that verifies the configured npm trusted publisher by exchanging an OIDC identity for a short-lived publishing credential without uploading a package.
+- Add authorization failure and credential-handling tests for the release workflow. Plugin behavior is unchanged.
+
+## [0.1.1] - 2026-09-06
+
+- Keep up to 20 side-question bubbles per session; questions in other sessions no longer remove your answers.
+- Preserve existing answers and the current draft when closing fails, with a prompt to retry.
+- Improve reliability when cancelling and closing side questions.
+
+## [0.1.0] - 2026-09-06
+
+- Introduce `/btw` side questions that use completed context from the main conversation and answer without executing tools.
+- Display answers in separate bubbles above the composer, with Markdown, copy, collapse, close, and cancel support.
+- Support light and dark themes and Chinese and English interfaces.

@@ -1,0 +1,78 @@
+import type { Context as ContextType } from '@deepseek-ai/cordis'
+import type { CommandRuntime as CommandRuntimeType } from '@deepseek-ai/dsh-commands'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import type { Agent } from '@deepseek-ai/dsh-agent'
+import { expect, it, vi } from 'vitest'
+import { apply } from '../src/index'
+import { CLOSE_COMMAND, RUN_COMMAND } from '../src/shared'
+
+const runtimeRoot = process.env.DSH_RUNTIME_ROOT ?? fileURLToPath(new URL('../node_modules', import.meta.url))
+const runtimeRoots = [...new Set([runtimeRoot, ...(process.env.DSH_DESKTOP_RUNTIME_ROOT ? [process.env.DSH_DESKTOP_RUNTIME_ROOT] : [])])]
+
+it.each(runtimeRoots)('真实 RPC 目录隐藏内部命令且执行与卸载正常：%s', async root => {
+  const version = JSON.parse(readFileSync(join(root, '@deepseek-ai', 'dsh-commands', 'package.json'), 'utf8')).version as string
+  const attachmentFields: Record<string, 'submittedAttachments'> = {
+    '0.2.0-rc.1': 'submittedAttachments',
+    '0.2.0-rc.2': 'submittedAttachments',
+    '0.2.1-rc.1': 'submittedAttachments',
+    '0.2.1-rc.2': 'submittedAttachments',
+    '0.2.1-rc.3': 'submittedAttachments',
+    '0.2.1-rc.4': 'submittedAttachments',
+    '0.2.1-rc.5': 'submittedAttachments',
+    '0.2.2-rc.1': 'submittedAttachments',
+    '0.2.2-rc.2': 'submittedAttachments',
+  }
+  const attachmentField = Object.hasOwn(attachmentFields, version) ? attachmentFields[version] : undefined
+  if (!attachmentField) throw new Error(`未验证的 DSH RPC 附件协议版本：${version}；请先确认字段并更新测试映射。`)
+  const attachments = { [attachmentField]: [] }
+  const modulePath = (name: string, file = 'index.js') => pathToFileURL(join(root, '@deepseek-ai', name, 'lib', file)).href
+  const { Context } = await import(/* @vite-ignore */ modulePath('cordis')) as { Context: typeof ContextType }
+  const { CommandRuntime } = await import(/* @vite-ignore */ modulePath('dsh-commands')) as { CommandRuntime: typeof CommandRuntimeType }
+  const { TypertRegistry } = await import(/* @vite-ignore */ modulePath('dsh-typert-registry'))
+  const { TypertGatewayService } = await import(/* @vite-ignore */ modulePath('dsh-api-gateway'))
+  const { TYPERT } = await import(/* @vite-ignore */ modulePath('dsh-commands', 'typert.host.js'))
+  const ctx = new Context()
+  new CommandRuntime(ctx)
+  const registry = new TypertRegistry(ctx)
+  registry.register(TYPERT)
+  const gateway = new TypertGatewayService(ctx, { websocketHeartbeatIntervalMs: 2000 })
+  ctx.provide('tools', { guard: () => () => {} })
+  ctx.provide('subagents', {
+    getProvider: () => ({ inheritsParentContext: true, capabilities: { agentOptions: true, agentPreset: false, outputSchema: true, depthLimit: true } }),
+    start: async () => ({ result: Promise.resolve({ stopReason: 'completed', output: [{ type: 'text', text: '回答' }] }), dispose: async () => {} }),
+  })
+  const agent = { session: { header: { id: 'main' }, append: vi.fn() } } as unknown as Agent
+  registry.lookups.register('agent', {
+    parameter: 'agent', wire: 'agentId',
+    hostTypeSymbol: '@deepseek-ai/dsh-agent#Agent',
+    wireTypeSymbol: '@deepseek-ai/dsh-session/types#SessionId',
+    resolve: (id: string) => id === 'main' ? agent : undefined,
+  })
+  const connection = await import(/* @vite-ignore */ modulePath('dsh-client-connection')) as {
+    Peer?: new (owner: ContextType, options: { principal: { kind: 'owner' } }) => object
+    OperatorPeer?: new (owner: ContextType) => object
+  }
+  // 0.2.1-rc.1 起是 Peer(ctx, options)；0.2.0-rc.1 与 0.2.0-rc.2 是 OperatorPeer(ctx)。
+  const peer = connection.Peer
+    ? new connection.Peer(ctx, { principal: { kind: 'owner' } })
+    : new connection.OperatorPeer!(ctx)
+  const listRemote = () => gateway.invoke({ namespace: 'commands', method: 'list', args: { agentId: 'main' }, peer })
+  ctx.commands.register({ name: 'other', description: '其他命令', handler: () => ({ kind: 'success', text: 'other' }) })
+  const plugin = ctx.plugin(apply)
+  try {
+    await plugin.await()
+    expect(ctx.commands.list(agent).map(item => item.name)).toEqual(['btw', 'other'])
+    const listed = await listRemote() as { name: string; description: string }[]
+    expect(listed.map(item => item.name)).toEqual(['btw', 'other'])
+    expect(listed.find(item => item.name === 'btw')?.description).toBe('根据当前上下文回答，不执行工具')
+    for (const line of [`/${RUN_COMMAND} ${JSON.stringify({ id: 'request01', question: '你好' })}`, `/${CLOSE_COMMAND} request01`]) {
+      expect((await gateway.invoke({ namespace: 'commands', method: 'execute', args: { agentId: 'main', line, ...attachments }, peer, signal: new AbortController().signal }) as { result?: { kind?: string } })?.result?.kind).toBe('success')
+    }
+    await plugin.dispose()
+    ctx.commands.register({ name: RUN_COMMAND, description: '恢复检查', handler: () => ({ kind: 'success' }) })
+    expect(ctx.commands.list(agent).map(item => item.name)).toEqual([RUN_COMMAND, 'other'])
+    expect(await listRemote()).toEqual([{ name: RUN_COMMAND, description: '恢复检查' }, { name: 'other', description: '其他命令' }])
+  } finally { await ctx.fiber.dispose() }
+})

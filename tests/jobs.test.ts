@@ -1,0 +1,290 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { sanitizeModelAnswer, SideJobs, type ChildRun, type StartChild } from '../src/server/jobs'
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no })
+  return { promise, resolve, reject }
+}
+const answer = { stopReason: 'completed', output: [{ type: 'text', text: '答案' }] }
+const tick = () => new Promise<void>(resolve => setImmediate(resolve))
+afterEach(() => { vi.useRealTimers() })
+
+describe('一次性旁问生命周期', () => {
+  it.each(['zh', 'en'] as const)('关闭失败返回本地化提示，原始错误记日志且保留额度（%s）', async locale => {
+    const dispose = vi.fn().mockRejectedValue(new Error('provider internal failure'))
+    const onError = vi.fn()
+    const jobs = new SideJobs(async () => ({ result: Promise.resolve(answer), dispose }), 90_000, { onError })
+    expect((await jobs.ask('A', 'request01', '问题', undefined, undefined, locale)).kind).toBe('success')
+    onError.mockClear()
+    expect(await jobs.close('A', 'request01')).toEqual({ kind: 'error', text: locale === 'zh'
+      ? '资源清理失败，请再次关闭重试。'
+      : 'Cleanup failed. Close again to retry.' })
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('provider internal failure') }))
+    expect(jobs.size).toBe(1)
+    dispose.mockResolvedValue(undefined)
+    expect((await jobs.close('A', 'request01')).kind).toBe('success')
+    expect(jobs.size).toBe(0)
+  })
+
+  it('默认 30 分钟兜底超时保护并发配额，允许长时间思考直到完成', async () => {
+    vi.useFakeTimers()
+    const pending = deferred<typeof answer>()
+    const dispose = vi.fn(async () => {})
+    const jobs = new SideJobs(async () => ({ result: pending.promise, dispose }))
+    const task = jobs.ask('parent', 'request01', '深度思考题')
+    // 超过旧的 90s (例如推进 10 分钟 600s)，依然正常思考不中断
+    await vi.advanceTimersByTimeAsync(600_000)
+    expect(jobs.size).toBe(1)
+    pending.resolve(answer)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(await task).toEqual({ kind: 'success', text: '答案' })
+    expect(jobs.size).toBe(0)
+  })
+
+  it('超过 30 分钟兜底看门狗后主动取消，防止极端假死占满名额', async () => {
+    vi.useFakeTimers()
+    const pending = deferred<typeof answer>()
+    const dispose = vi.fn(async () => {})
+    const jobs = new SideJobs(async () => ({ result: pending.promise, dispose }))
+    const task = jobs.ask('parent', 'request01', '假死题')
+    // 推进超过 30 分钟 (1800s + 1s)
+    await vi.advanceTimersByTimeAsync(1_800_001)
+    expect((await task).kind).toBe('error')
+    expect(jobs.size).toBe(0)
+  })
+
+  it('正常完成后释放子代理', async () => {
+    const dispose = vi.fn(async () => {})
+    const start = vi.fn<StartChild>(async () => ({ result: Promise.resolve(answer), dispose }))
+    const jobs = new SideJobs(start)
+    expect(await jobs.ask('parent', 'request01', '为什么？')).toEqual({ kind: 'success', text: '答案' })
+    expect(dispose).toHaveBeenCalledTimes(1)
+    expect(jobs.size).toBe(0)
+  })
+
+  it('关闭等待迟到的启动结果并清理，答案不再返回', async () => {
+    const starting = deferred<ChildRun>()
+    const start = vi.fn<StartChild>(() => starting.promise)
+    const dispose = vi.fn(async () => {})
+    const jobs = new SideJobs(start)
+    const task = jobs.ask('parent', 'request01', '为什么？')
+    const closing = jobs.close('parent', 'request01')
+    starting.resolve({ result: Promise.resolve(answer), dispose })
+    expect((await task).kind).toBe('error')
+    expect(await closing).toEqual({ kind: 'success', text: '' })
+    expect(dispose).toHaveBeenCalledTimes(1)
+  })
+
+  it('取消不依赖模型响应；取消对应请求，不影响另一请求', async () => {
+    const pending = deferred<typeof answer>()
+    const dispose = vi.fn(async () => {})
+    const jobs = new SideJobs(async () => ({ result: pending.promise, dispose }))
+    const first = jobs.ask('parent', 'request01', 'A')
+    const second = jobs.ask('other', 'request02', 'B')
+    await tick()
+    await jobs.close('parent', 'request01')
+    expect((await first).kind).toBe('error')
+    expect(jobs.size).toBe(1)
+    pending.resolve(answer)
+    expect((await second).kind).toBe('success')
+    expect(dispose).toHaveBeenCalledTimes(2)
+  })
+
+  it('关闭先于运行到达时不再启动子代理', async () => {
+    const start = vi.fn<StartChild>()
+    const jobs = new SideJobs(start)
+    await jobs.close('parent', 'request01')
+    expect((await jobs.ask('parent', 'request01', 'A')).kind).toBe('error')
+    expect(start).not.toHaveBeenCalled()
+  })
+
+  it('会话隔离，不能关闭另一会话的请求', async () => {
+    const pending = deferred<typeof answer>()
+    const jobs = new SideJobs(async () => ({ result: pending.promise, dispose: async () => {} }))
+    const task = jobs.ask('parent', 'request01', 'A')
+    await jobs.close('other', 'request01')
+    expect(jobs.size).toBe(1)
+    pending.resolve(answer)
+    expect((await task).kind).toBe('success')
+  })
+
+  it('清理失败可重试，不能显示成功关闭', async () => {
+    const dispose = vi.fn().mockRejectedValueOnce(new Error('清理失败')).mockResolvedValue(undefined)
+    const onError = vi.fn()
+    const jobs = new SideJobs(async () => ({ result: Promise.resolve(answer), dispose }), 90_000, { onError })
+    expect(await jobs.ask('parent', 'request01', 'A')).toEqual({ kind: 'success', text: '答案' })
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('清理失败') }))
+    expect(jobs.size).toBe(1)
+    expect((await jobs.close('parent', 'request01')).kind).toBe('success')
+    expect(jobs.size).toBe(0)
+  })
+
+  it('拒绝重复请求，避免多次启动与重复费用', async () => {
+    const pending = deferred<typeof answer>()
+    const start = vi.fn<StartChild>(async () => ({ result: pending.promise, dispose: async () => {} }))
+    const jobs = new SideJobs(start)
+    const task = jobs.ask('parent', 'request01', 'A')
+    expect((await jobs.ask('parent', 'request01', 'A')).kind).toBe('error')
+    pending.resolve(answer)
+    await task
+    expect(start).toHaveBeenCalledTimes(1)
+  })
+
+  it('启动超时及时返回，迟到的子代理仍清理且不提前释放额度', async () => {
+    vi.useFakeTimers()
+    const starting = deferred<ChildRun>()
+    const dispose = vi.fn(async () => {})
+    const jobs = new SideJobs(() => starting.promise, 5, { cleanupTimeoutMs: 10, onError: vi.fn() })
+    const task = jobs.ask('parent', 'request01', 'A')
+    const result = vi.fn()
+    void task.then(result)
+    await vi.advanceTimersByTimeAsync(6)
+    expect(result).toHaveBeenCalledWith({ kind: 'error', text: '旁问超时，已取消。' })
+    expect(jobs.size).toBe(1)
+    const closing = jobs.close('parent', 'request01')
+    await vi.advanceTimersByTimeAsync(11)
+    expect((await closing).kind).toBe('error')
+    starting.resolve({ result: Promise.reject(new Error('迟到的失败')), dispose })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(dispose).toHaveBeenCalledTimes(1)
+    expect(jobs.size).toBe(0)
+    expect((await task).kind).toBe('error')
+  })
+
+  it('启动取消后迟到的拒绝释放额度，不产生未处理异常', async () => {
+    vi.useFakeTimers()
+    const starting = deferred<ChildRun>()
+    const jobs = new SideJobs(() => starting.promise, 5, { cleanupTimeoutMs: 10, onError: vi.fn() })
+    const task = jobs.ask('parent', 'request01', 'A')
+    await vi.advanceTimersByTimeAsync(6)
+    expect((await task).kind).toBe('error')
+    starting.reject(new Error('启动失败'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(jobs.size).toBe(0)
+  })
+
+  it('清理挂起不吞答案，关闭有界且重复关闭不并行重入清理', async () => {
+    vi.useFakeTimers()
+    const cleanup = deferred<void>()
+    const dispose = vi.fn(() => cleanup.promise)
+    const jobs = new SideJobs(async () => ({ result: Promise.resolve(answer), dispose }), 90_000, { cleanupTimeoutMs: 10, onError: vi.fn() })
+    const task = jobs.ask('parent', 'request01', 'A')
+    const result = vi.fn()
+    void task.then(result)
+    await vi.advanceTimersByTimeAsync(11)
+    expect(result).toHaveBeenCalledWith({ kind: 'success', text: '答案' })
+    expect(jobs.size).toBe(1)
+    const closing = jobs.close('parent', 'request01')
+    const again = jobs.close('parent', 'request01')
+    await vi.advanceTimersByTimeAsync(11)
+    expect((await closing).kind).toBe('error')
+    expect((await again).kind).toBe('error')
+    expect(dispose).toHaveBeenCalledTimes(1)
+    cleanup.resolve()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(jobs.size).toBe(0)
+    expect((await jobs.close('parent', 'request01')).kind).toBe('success')
+  })
+
+  it('卸载清理拒绝不抛出，重试完成后才通知保护可释放', async () => {
+    const dispose = vi.fn().mockRejectedValue(new Error('清理失败'))
+    const onIdle = vi.fn()
+    const onError = vi.fn()
+    const jobs = new SideJobs(async () => ({ result: Promise.resolve(answer), dispose }), 90_000, { onIdle, onError })
+    await jobs.ask('parent', 'request01', 'A')
+    await expect(jobs.dispose()).resolves.toBeUndefined()
+    expect(jobs.size).toBe(1)
+    expect(onIdle).not.toHaveBeenCalled()
+    expect((await jobs.ask('parent', 'request02', 'B')).kind).toBe('error')
+    dispose.mockResolvedValue(undefined)
+    await jobs.dispose()
+    await jobs.dispose()
+    expect(jobs.size).toBe(0)
+    expect(onIdle).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalled()
+  })
+
+  it('卸载不等待永久挂起的启动，迟到子代理完成清理后通知空闲', async () => {
+    vi.useFakeTimers()
+    const starting = deferred<ChildRun>()
+    const onIdle = vi.fn()
+    const dispose = vi.fn(async () => {})
+    const jobs = new SideJobs(() => starting.promise, 90_000, { cleanupTimeoutMs: 10, onIdle, onError: vi.fn() })
+    const task = jobs.ask('parent', 'request01', 'A')
+    const unloaded = vi.fn()
+    void jobs.dispose().then(unloaded)
+    await vi.advanceTimersByTimeAsync(11)
+    expect(unloaded).toHaveBeenCalledTimes(1)
+    expect(onIdle).not.toHaveBeenCalled()
+    expect((await task).kind).toBe('error')
+    starting.resolve({ result: Promise.resolve(answer), dispose })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(dispose).toHaveBeenCalledTimes(1)
+    expect(onIdle).toHaveBeenCalledTimes(1)
+  })
+
+  it('全局八路额度包含超时但尚未清理的启动', async () => {
+    vi.useFakeTimers()
+    const starts = Array.from({ length: 8 }, () => deferred<ChildRun>())
+    let next = 0
+    const start = vi.fn<StartChild>(() => starts[next++]!.promise)
+    const jobs = new SideJobs(start, 5, { cleanupTimeoutMs: 10, onError: vi.fn() })
+    const tasks = starts.map((_, index) => jobs.ask(`session-${index}`, 'request01', 'A'))
+    await vi.advanceTimersByTimeAsync(6)
+    expect((await jobs.ask('new-session', 'request02', 'B')).text).toContain('较多')
+    expect(start).toHaveBeenCalledTimes(8)
+    for (const pending of starts) pending.resolve({ result: Promise.resolve(answer), dispose: async () => {} })
+    await vi.advanceTimersByTimeAsync(0)
+    await Promise.all(tasks)
+    expect(jobs.size).toBe(0)
+  })
+
+  it('清洗模型因上下文惯性残留的 <tool_call> 与 <function_call> 标签伪代码', () => {
+    expect(sanitizeModelAnswer('这是正常回答')).toBe('这是正常回答')
+    expect(sanitizeModelAnswer('这是前文<tool_call>\n{"name":"read_file"}\n</tool_call>这是后文')).toBe('这是前文这是后文')
+    expect(sanitizeModelAnswer('<function_call>{"test": 1}</function_call>\n解释如下：OK')).toBe('解释如下：OK')
+    expect(sanitizeModelAnswer('```tool_call\n{"action": "test"}\n```\n结论是正确的')).toBe('结论是正确的')
+    expect(sanitizeModelAnswer('<tool_call>\n{"name": "fail"}\n</tool_call>')).toBe('')
+  })
+
+  it('同一 session 默认继承此前 BTW 问答，clear 后从空历史开始', async () => {
+    const histories: unknown[] = []
+    const jobs = new SideJobs(async request => {
+      histories.push(request.history)
+      return { result: Promise.resolve({ stopReason: 'completed', output: [{ type: 'text', text: `${request.question}的答案` }] }), dispose: async () => {} }
+    })
+    await jobs.ask('A', 'request01', '第一问')
+    await jobs.ask('A', 'request02', '追问')
+    expect(histories[1]).toEqual([{ question: '第一问', answer: '第一问的答案' }])
+    await jobs.ask('B', 'request03', '另一会话')
+    expect(histories[2]).toEqual([])
+    expect(await jobs.clear('A')).toEqual({ kind: 'success', text: 'BTW 对话记录已清空。' })
+    await jobs.ask('A', 'request04', '全新问题')
+    expect(histories[3]).toEqual([])
+  })
+
+  it('普通关闭保留历史，清空会取消旧任务且迟到答案不会写回', async () => {
+    const pending = deferred<typeof answer>()
+    const histories: unknown[] = []
+    const jobs = new SideJobs(async request => {
+      histories.push(request.history)
+      return {
+        result: request.question === '旧任务' ? pending.promise : Promise.resolve(answer),
+        dispose: async () => {},
+      }
+    })
+    await jobs.ask('A', 'request01', '已完成')
+    await jobs.close('A', 'request01')
+    const continuing = jobs.ask('A', 'request02', '旧任务')
+    await tick()
+    await jobs.clear('A')
+    expect((await continuing).kind).toBe('error')
+    pending.resolve(answer)
+    await jobs.ask('A', 'request03', '新任务')
+    await jobs.ask('A', 'request04', '检查历史')
+    expect(histories[2]).toEqual([])
+    expect(histories[3]).toEqual([{ question: '新任务', answer: '答案' }])
+  })
+})

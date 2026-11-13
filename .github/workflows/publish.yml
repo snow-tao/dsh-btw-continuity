@@ -1,0 +1,92 @@
+name: 发布
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 验证、打包并检查已启用的 npm OIDC 授权，不发布版本
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+    with:
+      full: true
+  release:
+    name: 打包与发布
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+      - name: 确认正式发布已启用
+        if: env.DRY_RUN != 'true' && vars.NPM_PUBLISH_ENABLED != 'true'
+        run: throw 'NPM_PUBLISH_ENABLED 未设为 true，本次正式发布已停止。'
+      - name: 配置 Node.js 与 npm OIDC
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org/
+      - name: 校验标签及双语更新日志
+        run: |
+          $package = Get-Content package.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          $tag = "v$($package.version)"
+          if ($env:DRY_RUN -ne 'true' -and ($env:GITHUB_REF_TYPE -ne 'tag' -or $env:GITHUB_REF_NAME -ne $tag)) {
+            throw '正式发布必须从与 package.json 版本一致的 v 标签运行。'
+          }
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          node scripts/release-notes.mjs $tag artifacts/release-notes.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          "NPM_PACKAGE_FILE=./artifacts/dsh-btw-continuity-$($package.version).tgz" >> $env:GITHUB_ENV
+      - name: 安装锁定依赖
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+      - name: 构建
+        run: npm run build
+      - name: 打包并检查发布内容
+        run: |
+          npm pack --ignore-scripts --pack-destination artifacts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/check-package.mjs $env:NPM_PACKAGE_FILE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm publish $env:NPM_PACKAGE_FILE --access public --dry-run --ignore-scripts
+      - name: 保存 CI 安装包与双语说明
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-btw-continuity-${{ github.run_id }}
+          path: |
+            artifacts/*.tgz
+            artifacts/release-notes.md
+          if-no-files-found: error
+      - name: 验证 npm OIDC 发布授权
+        if: env.DRY_RUN == 'true' && vars.NPM_PUBLISH_ENABLED == 'true'
+        run: node scripts/verify-npm-oidc.mjs
+      - name: 发布到 npm
+        id: npm_publish
+        if: env.DRY_RUN != 'true' && vars.NPM_PUBLISH_ENABLED == 'true'
+        run: npm publish $env:NPM_PACKAGE_FILE --access public --provenance
+      - name: 创建或更新 GitHub Release（仅说明）
+        if: env.DRY_RUN != 'true' && vars.NPM_PUBLISH_ENABLED == 'true' && steps.npm_publish.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/github-release.mjs
