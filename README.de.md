@@ -26,7 +26,7 @@ Fortlaufende Nebenfragen in DeepSeek Harness: ein chronologisches Panel pro Sitz
 - Node.js 22+
 - Ein konfigurierter Modellanbieter
 
-**Nicht zusammen mit `@michengai/dsh-btw` installieren oder aktivieren**, da beide `/btw` registrieren.
+**Dieses Paket ist eine Weiterentwicklung von `@michengai/dsh-btw`. Beide registrieren `/btw` und können daher nicht gleichzeitig aktiviert sein.**
 
 ## Installation
 

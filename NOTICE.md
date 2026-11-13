@@ -17,4 +17,4 @@ This package is not an official DeepSeek AI product and is not endorsed by DeepS
 - Added explicit history clearing and lifecycle isolation between sessions.
 - Renamed the package, Loader row, locale namespace, settings binding, and UI slot to `dsh-btw-continuity`.
 
-The original `/btw` command is retained for familiarity. Do not install or enable this package together with `@michengai/dsh-btw`, because both register the same public command.
+This package is a modification of `@michengai/dsh-btw`. Both register the same public `/btw` command, so they cannot be enabled together.

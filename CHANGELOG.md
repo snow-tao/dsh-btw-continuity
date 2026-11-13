@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.3] - 2026-11-13
+
+- **Clarify the upstream relationship**: README and NOTICE now state directly that this package is a modification of `@michengai/dsh-btw`, and both register `/btw`, so they cannot be enabled together.
+
 ## [1.5.2] - 2026-11-13
 
 - **Revise all release documentation**: Update all eight READMEs for the single-panel conversation, inline composer, history restoration, privacy, and the new package name.

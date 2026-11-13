@@ -27,7 +27,7 @@ Continuous side questions in DeepSeek Harness: one chronological panel per sessi
 - Node.js 22+
 - A configured model provider
 
-**Do not install or enable this package alongside `@michengai/dsh-btw`**, because both register `/btw`.
+**This package is a modification of `@michengai/dsh-btw`. Both register `/btw`, so they cannot be enabled together.**
 
 ## Installation
 

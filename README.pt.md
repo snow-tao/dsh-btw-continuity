@@ -26,7 +26,7 @@ Perguntas secundárias contínuas no DeepSeek Harness: um painel cronológico po
 - Node.js 22+
 - Um provedor de modelo configurado
 
-**Não instale nem ative este pacote junto com `@michengai/dsh-btw`**, pois ambos registram `/btw`.
+**Este pacote é uma modificação de `@michengai/dsh-btw`. Ambos registram `/btw`, portanto não podem ser ativados ao mesmo tempo.**
 
 ## Instalação
 

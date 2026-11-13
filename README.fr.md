@@ -26,7 +26,7 @@ Questions secondaires continues dans DeepSeek Harness : un panneau chronologique
 - Node.js 22+
 - Un fournisseur de modèle configuré
 
-**N'installez pas et n'activez pas ce paquet avec `@michengai/dsh-btw`**, car les deux enregistrent `/btw`.
+**Ce paquet est une modification de `@michengai/dsh-btw`. Les deux enregistrent `/btw` et ne peuvent donc pas être activés ensemble.**
 
 ## Installation
 

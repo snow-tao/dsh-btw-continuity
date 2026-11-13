@@ -26,7 +26,7 @@ Preguntas laterales continuas en DeepSeek Harness: un panel cronológico por ses
 - Node.js 22+
 - Un proveedor de modelos configurado
 
-**No instales ni actives este paquete junto con `@michengai/dsh-btw`**, porque ambos registran `/btw`.
+**Este paquete es una modificación de `@michengai/dsh-btw`. Ambos registran `/btw`, por lo que no pueden estar activados a la vez.**
 
 ## Instalación
 

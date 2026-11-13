@@ -1,6 +1,6 @@
 {
   "name": "dsh-btw-continuity",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "DSH 单面板连续旁问：共享 session 历史、底部直接追问、垃圾桶清空 · Single-panel BTW chat with inline follow-ups and clear history",
   "upstream": "https://github.com/MichengAI/dsh-btw",
   "repository": {
